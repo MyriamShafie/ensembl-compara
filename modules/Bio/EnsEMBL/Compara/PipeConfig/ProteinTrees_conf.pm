@@ -1241,6 +1241,15 @@ sub core_pipeline_analyses {
             -parameters     => {
                 'sql'   => 'INSERT IGNORE INTO hmm_annot SELECT seq_member_id, panther_family_id, evalue FROM panther_annot pa JOIN seq_member sm ON sm.stable_id = pa.ensembl_id',
             },
+            -flow_into      => [ 'HMMer_remove_projection_hits' ],
+        },
+
+        {
+            -logic_name     => 'HMMer_remove_projection_hits',
+            -module         => 'Bio::EnsEMBL::Hive::RunnableDB::SqlCmd',
+            -parameters     => {
+                'sql'   => 'DELETE hmm_annot FROM hmm_annot JOIN seq_member_projection ON seq_member_id = target_seq_member_id',
+            },
             -flow_into      => [ 'HMMer_classify_factory' ],
         },
 
@@ -1512,7 +1521,7 @@ sub core_pipeline_analyses {
                     '!(#are_all_species_reused# and (#reuse_level# eq "clusters")) and (#clustering_mode# ne "blastp") and (#clustering_mode# eq "ortholog")' => 'ortholog_cluster',
                     '!(#are_all_species_reused# and (#reuse_level# eq "clusters")) and (#clustering_mode# ne "blastp") and (#clustering_mode# ne "ortholog")' => 'load_InterproAnnotation',
                 ),
-                'A->1' => [ 'remove_blacklisted_genes' ],
+                'A->1' => [ 'expand_clusters_with_projections' ],
             },
         },
 
@@ -1600,6 +1609,13 @@ sub core_pipeline_analyses {
             -rc_name => '4Gb_job',
         },
 
+        {   -logic_name         => 'expand_clusters_with_projections',
+            -module             => 'Bio::EnsEMBL::Hive::RunnableDB::SqlCmd',
+            -parameters         => {
+                'sql'   => 'INSERT INTO gene_tree_node (parent_id, root_id, seq_member_id) SELECT gtn.parent_id, gtn.root_id, smp.target_seq_member_id FROM gene_tree_node gtn JOIN seq_member_projection smp ON gtn.seq_member_id = smp.source_seq_member_id',
+            },
+            -flow_into          => [ 'remove_blacklisted_genes' ],
+        },
 
         {   -logic_name         => 'remove_blacklisted_genes',
             -module             => 'Bio::EnsEMBL::Compara::RunnableDB::GeneTrees::RemoveBlacklistedGenes',
