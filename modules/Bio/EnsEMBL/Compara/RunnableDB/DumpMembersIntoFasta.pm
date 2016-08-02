@@ -79,7 +79,7 @@ sub fetch_input {
 
     my $members;
     if ($self->param('only_canonical')) {
-        $members = $self->compara_dba->get_SeqMemberAdaptor->fetch_all_canonical_by_GenomeDB($genome_db_id);
+        $members = $self->compara_dba->get_SeqMemberAdaptor->_fetch_all_canonical_for_blast_by_genome_db_id($genome_db_id);
     } else {
         $members = $self->compara_dba->get_SeqMemberAdaptor->fetch_all_by_GenomeDB($genome_db_id);
     }
