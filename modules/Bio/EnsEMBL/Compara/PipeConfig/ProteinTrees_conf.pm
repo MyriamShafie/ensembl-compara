@@ -1015,7 +1015,7 @@ sub core_pipeline_analyses {
             -parameters => {
                             'db_conn'    => '#reuse_db#',
                             'table'      => 'hmm_annot',
-                            'inputquery' => 'SELECT h.* FROM hmm_annot h JOIN seq_member USING (seq_member_id) WHERE genome_db_id = #genome_db_id# AND seq_member_id <= '.$self->o('protein_members_range'),
+                            'inputquery' => 'SELECT h.* FROM hmm_annot h RIGHT JOIN seq_member USING (seq_member_id) WHERE genome_db_id = #genome_db_id# AND seq_member_id <= '.$self->o('protein_members_range'),
             },
             -hive_capacity => $self->o('reuse_capacity'),
             -rc_name => '250Mb_job',
