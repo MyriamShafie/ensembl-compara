@@ -1107,6 +1107,32 @@ CREATE TABLE exon_boundaries (
 
 
 /**
+@table seq_member_projection
+@desc  This table stores data about projected transcripts (in the gene-annotation process), which is used to help the clustering
+@colour   #1E90FF
+
+@example   The following query shows the projections of the mouse gene Pdk3 to all the other species
+@sql       SELECT ss.stable_id, gs.name, st.stable_id, gt.name FROM (seq_member ss JOIN genome_db gs USING (genome_db_id)) JOIN seq_member_projection ON ss.seq_member_id = source_seq_member_id JOIN (seq_member_projection st JOIN genome_db gt USING (genome_db_id)) ON st.seq_member_id = target_seq_member_id WHERE ss.stable_id = "ENSMUSP00000036604";
+
+@column source_seq_member_id        External reference to seq_member_id in the @link seq_member table. Shows the source of the projection
+@column target_seq_member_id        External reference to seq_member_id in the @link seq_member table. Shows the target of the projection, i.e. this gene was annotated by projection of source_seq_member_id
+
+@see seq_member
+*/
+
+CREATE TABLE seq_member_projection (
+  source_seq_member_id      int(10) unsigned NOT NULL,
+  target_seq_member_id      int(10) unsigned NOT NULL,
+
+  FOREIGN KEY (source_seq_member_id) REFERENCES seq_member(seq_member_id),
+  FOREIGN KEY (target_seq_member_id) REFERENCES seq_member(seq_member_id),
+
+  PRIMARY KEY (target_seq_member_id),
+  KEY (source_seq_member_id)
+) ENGINE=MyISAM;
+
+
+/**
 @table external_db
 @desc  This table stores data about the external databases in which the objects described in the @link member_xref table are stored.
 @colour   #1E90FF

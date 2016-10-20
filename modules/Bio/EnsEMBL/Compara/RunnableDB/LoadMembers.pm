@@ -263,6 +263,13 @@ sub loadMembersFromCoreSlices {
 
           next unless $gene_member;
 
+          my @proj_attrib = @{ $gene->get_all_Attributes('proj_parent_g') };
+          if (@proj_attrib) {
+              my $parent_name = $proj_attrib[0]->value;
+              $parent_name =~ s/\.\d+$//;   # strip the version out
+              $self->compara_dba->dbc->do('INSERT INTO seq_member_projection_stable_id (source_stable_id, target_stable_id) VALUES (?,?)', undef, $parent_name, $gene_member->stable_id);
+          }
+
           $self->param('realGeneCount', $self->param('realGeneCount')+1 );
           print STDERR $self->param('realGeneCount') , " genes stored\n" if ($self->debug && (0 == ($self->param('realGeneCount') % 100)));
        } # foreach
@@ -378,6 +385,11 @@ sub store_protein_coding_gene_and_all_transcripts {
         }
         if ($self->param('store_exon_coordinates')) {
             $self->store_exon_coordinates($transcript, $pep_member);
+        }
+
+        my $source_seq_member;
+        if ($source_seq_member) {
+            $self->compara_dba->dbc->do('INSERT INTO seq_member_projection_stable_id VALUES (?,?)', $source_seq_member, $pep_member->stable_id);
         }
 
         print(" : stored\n") if($self->param('verbose'));
