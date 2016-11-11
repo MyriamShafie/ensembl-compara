@@ -62,6 +62,7 @@ sub param_defaults {
 
         'rfam_model_id'         => undef,
         'family_stable_id'      => undef,
+        'member_genome_db_id'   => undef,
         'protein_tree_stable_id'        => undef,
         'method_link_species_set_id'    => undef,
 
@@ -84,6 +85,7 @@ sub fetch_input {
     $self->_expand_array('rfam_model_id', 'gene_tree_root_tag', 'tag = "model_id" AND value');
     $self->_expand_array('family_stable_id', 'family', 'stable_id');
     $self->_expand_array('method_link_species_set_id', 'method_link_species_set', 'method_link_species_set_id');
+    $self->_expand_array('member_genome_db_id', 'gene_member', 'genome_db_id');
 }
 
 # Here we allow each entry point to be reused several times
