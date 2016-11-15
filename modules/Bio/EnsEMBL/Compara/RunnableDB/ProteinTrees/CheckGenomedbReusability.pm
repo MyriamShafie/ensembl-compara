@@ -64,7 +64,10 @@ sub param_defaults {
     my $self = shift;
     return {
         %{$self->SUPER::param_defaults},
-        check_gene_content  => 1,
+
+        # What to check
+        'check_gene_content'            => 1,
+        'check_canonical_transcripts'   => 1,
 
         # "reuse_this" is used throughout the Runnable. Default value is
         # undef, so that the calling job can set it to 0 or 1
@@ -222,6 +225,17 @@ sub run {
         $self->warning("The coding objects changed: $added hash keys were added and $removed were removed");
     }
 
+    if (comes_from_core_database($self->param('genome_db'))) {
+        $prev_hash = hash_all_canonical_transcripts_from_dbc( $self->param('prev_core_dba') );
+        $curr_hash = hash_all_canonical_transcripts_from_dbc( $self->param('curr_core_dba') );
+    }
+    ($removed, $remained1) = check_hash_equals($prev_hash, $curr_hash);
+    ($added, $remained2)   = check_hash_equals($curr_hash, $prev_hash);
+    if ($added || $removed) {
+        $coding_objects_differ = 1;
+        $self->warning("The canonical transcripts changed: $added hash keys were added and $removed were removed");
+    }
+
     $self->param('reuse_this', $coding_objects_differ ? 0 : 1);
 }
 
@@ -280,6 +294,32 @@ sub hash_all_exons_from_dbc {
     }
 
     return \%exon_set;
+}
+
+sub hash_all_canonical_transcripts_from_dbc {
+    my $dba = shift @_;
+    my $dbc = $dba->dbc();
+
+    my $sql = qq{
+        SELECT CONCAT(g.stable_id, ':', t.stable_id)
+          FROM gene g, transcript t, seq_region sr, coord_system cs
+         WHERE g.canonical_transcript_id=t.transcript_id
+           AND t.seq_region_id = sr.seq_region_id
+           AND sr.coord_system_id = cs.coord_system_id
+           AND t.canonical_translation_id IS NOT NULL
+           AND cs.species_id =?
+    };
+
+    my %canonical_set = ();
+
+    my $sth = $dbc->prepare($sql);
+    $sth->execute($dba->species_id());
+
+    while(my ($key) = $sth->fetchrow()) {
+        $canonical_set{$key} = 1;
+    }
+
+    return \%canonical_set;
 }
 
 sub hash_all_sequences_from_db {
